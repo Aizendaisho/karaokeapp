@@ -10,14 +10,31 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useUser } from '@/lib/useUser'
 import { AuthModal } from '@/components/layout/AuthModal'
 import { useTheme } from 'next-themes'
+import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 export function Navbar() {
   const { user, loading } = useUser()
   const [authModalOpen, setAuthModalOpen] = useState(false)
   const [authType, setAuthType] = useState<'signin' | 'signup'>('signup')
   const { theme, setTheme } = useTheme()
+  const router = useRouter()
 
-  if (loading) return null // O muestra un skeleton loader
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut()
+    
+    if (error) {
+      toast.error('Error al cerrar sesión', {
+        description: error.message
+      })
+    } else {
+      router.refresh()
+      router.push('/')
+    }
+  }
+
+  if (loading) return null
 
   return (
     <>
@@ -46,17 +63,26 @@ export function Navbar() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex items-center gap-2"
+                className="flex items-center gap-4"
               >
-                <Avatar>
-                  <AvatarImage src={user.user_metadata?.avatar_url} />
-                  <AvatarFallback>
-                    {user.email?.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-foreground font-medium">
-                  {user.user_metadata?.full_name || user.email}
-                </span>
+                <div className="flex items-center gap-2">
+                  <Avatar>
+                    <AvatarImage src={user.user_metadata?.avatar_url} />
+                    <AvatarFallback>
+                      {user.email?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-foreground font-medium">
+                    {user.user_metadata?.full_name || user.email}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={handleLogout}
+                  className="border-red-500 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  Cerrar sesión
+                </Button>
               </motion.div>
             ) : (
               <div className="flex items-center gap-2">
